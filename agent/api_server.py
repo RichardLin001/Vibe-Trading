@@ -510,6 +510,19 @@ LLM_PROVIDER_BY_NAME = {provider.name: provider for provider in LLM_PROVIDERS}
 LLM_REASONING_EFFORTS = {"", "low", "medium", "high", "max"}
 LLM_API_KEY_PLACEHOLDERS = {"", "sk-or-v1-your-key-here", "sk-xxx", "xxx", "gsk_xxx"}
 TUSHARE_TOKEN_PLACEHOLDERS = {"", "your-tushare-token"}
+SETTINGS_ENV_KEYS = {
+    "LANGCHAIN_PROVIDER",
+    "LANGCHAIN_MODEL_NAME",
+    "LANGCHAIN_TEMPERATURE",
+    "TIMEOUT_SECONDS",
+    "MAX_RETRIES",
+    "LANGCHAIN_REASONING_EFFORT",
+    "TUSHARE_TOKEN",
+}
+for _provider in LLM_PROVIDERS:
+    SETTINGS_ENV_KEYS.add(_provider.base_url_env)
+    if _provider.api_key_env:
+        SETTINGS_ENV_KEYS.add(_provider.api_key_env)
 
 
 def _ensure_agent_env_file() -> Path:
@@ -548,11 +561,15 @@ def _read_env_values(path: Path) -> Dict[str, str]:
 def _read_settings_env_values() -> Dict[str, str]:
     """Read settings without creating agent/.env.
 
-    Prefer the user's active agent/.env. If it does not exist yet, fall back to
-    agent/.env.example for display defaults only.
+    Prefer the user's active agent/.env. If it does not exist yet, read known
+    keys from the running process environment before falling back to
+    agent/.env.example display defaults.
     """
     if ENV_PATH.exists():
         return _read_env_values(ENV_PATH)
+    runtime_values = {key: os.environ[key] for key in SETTINGS_ENV_KEYS if key in os.environ}
+    if runtime_values:
+        return runtime_values
     if ENV_EXAMPLE_PATH.exists():
         return _read_env_values(ENV_EXAMPLE_PATH)
     return {}

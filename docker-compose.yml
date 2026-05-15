@@ -8,6 +8,7 @@ services:
     environment:
       - VIBE_TRADING_TRUST_DOCKER_LOOPBACK=1
     volumes:
+      - ./agent/.env:/app/agent/.env
       - vibe-runs:/app/agent/runs
       - vibe-sessions:/app/agent/sessions
     restart: unless-stopped
